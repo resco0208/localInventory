@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System</title>
+</head>
+
+<style>
+    *{
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+        scroll-behavior: smooth;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body{
+        background-color: #f1f1f1;
+        display: flex;
+        justify-content: center;
+    }
+
+    .container{
+        width: 60%;
+        min-height: 100vh;
+        padding: 2em;
+        background-color: #fff;
+        box-shadow: 0 0 5px #aaa;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5em;
+    }
+
+    h1{
+        text-align: center;
+    }
+
+    #backupAndRestore{
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+    }
+
+    #backupAndRestore .form-group{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    #backupAndRestore .form-group input{
+        padding: 0.5em;
+        border: solid 1px #aaa;
+        font-size: 1rem;
+        outline-color: #01BD6F;
+    }
+
+    #backupAndRestore .form-group button{
+        background-color: #01BD6F;
+        color: #fff;
+        font-weight: bold;
+        padding: 0.5em;
+        border: solid 1px #01BD6F;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    #itemForm{
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        grid-column-gap: 1em;
+        grid-row-gap: 1em;
+    }
+
+    #itemForm .form-group{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    #itemForm .form-group input{
+        background-color: #f1f1f1;
+        padding: 0.5em;
+        border: solid 1px #aaa;
+        font-size: 1rem;
+        outline-color: #01BD6F;
+    }
+
+    #itemForm .form-group button{
+        background-color: #01BD6F;
+        color: #fff;
+        font-weight: bold;
+        padding: 0.5em;
+        border: solid 1px #01BD6F;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    #searchInput{
+        width: 100%;
+        background-color: #f1f1f1;
+        padding: 0.5em;
+        border: solid 1px #aaa;
+        font-size: 1rem;
+        outline-color: #01BD6F;
+    }
+
+    #listTable{
+        overflow: hidden;
+        overflow-x: auto;
+    }
+
+    table{
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    table th{
+        padding: 1em;
+        background-color: #333;
+        color: #fff;
+    }
+
+    table tr:nth-child(even){
+        background-color: #f1f1f1;
+    }
+
+    table td{
+        text-align: center;
+        padding: 1em;
+    }
+
+    table td button{
+        padding: 0.2em;
+    }
+
+    @media screen and (max-width: 767px){
+        .container{
+            width: 100%;
+        }
+
+        #itemForm{
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+    }
+</style>
+
+<body>
+    <div class="container">
+        <h1>Inventory System</h1>
+
+        <div id="backupAndRestore">
+            <h2>Import/Export Data</h2>
+
+            <div class="form-group">
+                <label>Import:</label>
+                <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+            </div>
+
+            <div class="form-group">
+                <label>Export:</label>
+                <button onclick="exportData()">Export Data</button>
+            </div>
+        </div>
+
+        <div id="addNewItem">
+            <h2>Add/Edit Item</h2>
+            <br>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemBarcode">Barcode:</label>
+                    <input type="text" id="itemBarcode" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemName">Item Name:</label>
+                    <input type="text" id="itemName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="itemDescription">Description:</label>
+                    <input type="text" id="itemDescription" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemBrand">Brand:</label>
+                    <input type="text" id="itemBrand" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemQuantity">Quantity:</label>
+                    <input type="number" id="itemQuantity" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemPrice">Price:</label>
+                    <input type="number" id="itemPrice" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <input type="hidden" id="itemIndex">
+                    <button type="submit">Save Item</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="listTable">
+            <h2>Inventory List</h2>
+            <br>
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for barcodes..">
+            <br><br>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Item Name</th>
+                        <th>Description</th>
+                        <th>Brand</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const itemForm = document.getElementById('itemForm');
+            const inventoryList = document.getElementById('inventoryList');
+            const itemNameInput = document.getElementById('itemName');
+            const itemDescriptionInput = document.getElementById('itemDescription');
+            const itemBrandInput = document.getElementById('itemBrand');
+            const itemQuantityInput = document.getElementById('itemQuantity');
+            const itemPriceInput = document.getElementById('itemPrice');
+            const itemBarcodeInput = document.getElementById('itemBarcode');
+            const itemIndexInput = document.getElementById('itemIndex');
+            
+            function loadInventory() {
+                inventoryList.innerHTML = '';
+                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                inventory.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.barcode}</td>
+                        <td>${item.name}</td>
+                        <td>${item.description}</td>
+                        <td>${item.brand}</td>
+                        <td>${item.quantity}</td>
+                        <td>₱${item.price.toFixed(2)}</td>
+                        <td>
+                            <button onclick="editItem(${index})">Edit</button>
+                            <button onclick="deleteItem(${index})">Delete</button>
+                        </td>
+                    `;
+                    inventoryList.appendChild(tr);
+                });
+            }
+
+            function addItem(event) {
+                event.preventDefault();
+                const itemName = itemNameInput.value;
+                const itemDescription = itemDescriptionInput.value;
+                const itemBrand = itemBrandInput.value;
+                const itemQuantity = itemQuantityInput.value;
+                const itemPrice = parseFloat(itemPriceInput.value);
+                const itemBarcode = itemBarcodeInput.value;
+                const itemIndex = itemIndexInput.value;
+                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                if (itemIndex) {
+                    inventory[itemIndex] = { name: itemName, description: itemDescription, brand: itemBrand, quantity: itemQuantity, price: itemPrice, barcode: itemBarcode };
+                } else {
+                    inventory.push({ name: itemName, description: itemDescription, brand: itemBrand, quantity: itemQuantity, price: itemPrice, barcode: itemBarcode });
+                }
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                loadInventory();
+                itemForm.reset();
+            }
+
+            window.editItem = function(index) {
+                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                const item = inventory[index];
+                itemNameInput.value = item.name;
+                itemDescriptionInput.value = item.description;
+                itemBrandInput.value = item.brand;
+                itemQuantityInput.value = item.quantity;
+                itemPriceInput.value = item.price;
+                itemBarcodeInput.value = item.barcode;
+                itemIndexInput.value = index;
+            }
+
+            window.deleteItem = function(index) {
+                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                inventory.splice(index, 1);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                loadInventory();
+            }
+
+            window.exportData = function() {
+                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                const dataStr = JSON.stringify(inventory, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'inventory.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            window.importData = function(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const inventory = JSON.parse(content);
+                    localStorage.setItem('inventory', JSON.stringify(inventory));
+                    loadInventory();
+                };
+                reader.readAsText(file);
+            }
+
+            itemForm.addEventListener('submit', addItem);
+            loadInventory();
+        });
+
+        function searchTable() {
+            // Declare variables
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("inventoryTable");
+            tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows, and hide those who don't match the search query
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0]; // Change index to match the column you want to search
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
