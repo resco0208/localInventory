@@ -106,7 +106,7 @@
         outline-color: #01BD6F;
     }
 
-    #listTable{
+    .table-container{
         overflow: hidden;
         overflow-x: auto;
     }
@@ -117,13 +117,15 @@
     }
 
     table th{
+        border-bottom: solid 2px #aaa;
+        font-weight: bold;
         padding: 1em;
-        background-color: #333;
-        color: #fff;
+        color: #333;
     }
 
     table tr:nth-child(even){
-        background-color: #f1f1f1;
+        border-top: solid 1px #ddd;
+        border-bottom: solid 1px #ddd;
     }
 
     table td{
@@ -131,8 +133,25 @@
         padding: 1em;
     }
 
-    table td button{
-        padding: 0.2em;
+    .act-sec{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .editBtn{
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 0.4em;
+    }
+
+    .delBtn{
+        background-color: #f05050;
+        color: #fff;
+        border: none;
+        padding: 0.4em;
     }
 
     @media screen and (max-width: 767px){
@@ -144,6 +163,11 @@
             display: flex;
             flex-direction: column;
             gap: 1em;
+        }
+
+        table td{
+            text-align: center;
+            padding: 0.8em;
         }
     }
 </style>
@@ -212,20 +236,22 @@
             <br>
             <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for barcodes..">
             <br><br>
-            <table id="inventoryTable">
-                <thead>
-                    <tr>
-                        <th>Barcode</th>
-                        <th>Item Name</th>
-                        <th>Description</th>
-                        <th>Brand</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryList"></tbody>
-            </table>
+            <div class="table-container">
+                <table id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Item&nbsp;Name</th>
+                            <th>Description</th>
+                            <th>Brand</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryList"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -253,9 +279,9 @@
                         <td>${item.brand}</td>
                         <td>${item.quantity}</td>
                         <td>₱${item.price.toFixed(2)}</td>
-                        <td>
-                            <button onclick="editItem(${index})">Edit</button>
-                            <button onclick="deleteItem(${index})">Delete</button>
+                        <td class="act-sec">
+                            <button class="editBtn" onclick="editItem(${index})">Edit</button>
+                            <button class="delBtn" onclick="deleteItem(${index})">Delete</button>
                         </td>
                     `;
                     inventoryList.appendChild(tr);
@@ -295,10 +321,14 @@
             }
 
             window.deleteItem = function(index) {
-                const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
-                inventory.splice(index, 1);
-                localStorage.setItem('inventory', JSON.stringify(inventory));
-                loadInventory();
+                var message = confirm("Are you sure you want to delete this record?");
+                
+                if(message == true){
+                    const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+                    inventory.splice(index, 1);
+                    localStorage.setItem('inventory', JSON.stringify(inventory));
+                    loadInventory();
+                }
             }
 
             window.exportData = function() {
